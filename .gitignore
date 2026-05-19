@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+*firebase-adminsdk*.json
+
+safe-her-ac68f*.json

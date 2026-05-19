@@ -1,111 +1,239 @@
-import { useState } from "react";
-// Importa componentes do React Native para construir a interface e as interações
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  Vibration,
   View,
-} from "react-native";
-// Importa a tipagem para as propriedades da navegação
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-// Importa o tipo de navegação (tipagem para as rotas)
-import { RootStackParamList } from "../navigation/AppNavigator";
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { borderRadius, colors, fontSize, spacing } from '../styles/colors';
+import contactsService, { Contact } from '../services/contacts.service';
+import locationService from '../services/location.service';
 
-// Ajuste o import de estilos para caminhos relativos
-import { borderRadius, fontSize, spacing } from "../styles/colors";
-
-// Tipagem para as propriedades da tela (informando que a tela é uma rota da pilha de navegação)
 type Props = NativeStackScreenProps<RootStackParamList, 'TelaEmergencia'>;
 
 export default function TelaEmergencia({ navigation }: Props) {
-  // Estado que controla se o alerta está ativado ou não
   const [alertaAtivado, setAlertaAtivado] = useState(false);
+  const [contatos, setContatos] = useState<Contact[]>([]);
+  const [localizacao, setLocalizacao] = useState<{
+    latitude: number;
+    longitude: number;
+    endereco?: string;
+  } | null>(null);
 
-  // Função que alterna o estado do alerta
-  const toggleAlerta = () => {
-    const novoEstado = !alertaAtivado; // Inverte o estado do alerta
-    setAlertaAtivado(novoEstado); // Atualiza o estado
+  const carregarContatos = useCallback(async () => {
+    const lista = await contactsService.getAll();
+    setContatos(lista);
+  }, []);
 
-    // Exibe o alerta correspondente
-    if (novoEstado) {
-      Alert.alert("🚨 ALERTA ATIVADO", "Seus contatos serão notificados!"); // Se ativado
-    } else {
-      Alert.alert("Alerta desativado", "Você está em segurança."); // Se desativado
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', carregarContatos);
+    return unsubscribe;
+  }, [navigation, carregarContatos]);
+
+  // Ativa ou desativa o SOS
+  const toggleAlerta = async () => {
+    if (alertaAtivado) {
+      setAlertaAtivado(false);
+      setLocalizacao(null);
+      locationService.stopTracking();
+      Vibration.vibrate(200);
+      Alert.alert('Alerta desativado', 'Você está em segurança. 💜');
+      return;
     }
+
+    Vibration.vibrate([0, 400, 200, 400]);
+    setAlertaAtivado(true);
+
+    // Captura localização atual
+    const coords = await locationService.getCurrentLocation();
+    let endereco: string | undefined;
+    let mapsLink: string | undefined;
+
+    if (coords) {
+      endereco = (await locationService.getAddressFromCoords(coords)) ?? undefined;
+      mapsLink = `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`;
+      setLocalizacao({ ...coords, endereco });
+    }
+
+    if (contatos.length === 0) {
+      Alert.alert(
+        '🚨 SOS ATIVADO',
+        'Você não tem contatos de emergência cadastrados.\nAdicione contatos na aba Contatos.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Envia WhatsApp para todos os contatos
+    await enviarWhatsAppSOS(endereco, mapsLink);
+  };
+
+  // Envia mensagem de SOS pelo WhatsApp para todos os contatos
+  const enviarWhatsAppSOS = async (endereco?: string, mapsLink?: string) => {
+    const locationText = mapsLink
+      ? `📍 ${endereco ?? 'Localização atual'}\n🗺️ Ver no mapa: ${mapsLink}`
+      : '📍 Localização não disponível';
+
+    const mensagem = encodeURIComponent(
+      `🚨 EMERGÊNCIA - Safe Her\n\nPreciso de ajuda agora!\n\n${locationText}`
+    );
+
+    // Envia para o primeiro contato cadastrado
+    const contato = contatos[0];
+    const telefone = contato.phone.replace(/\D/g, '');
+    const url = `whatsapp://send?phone=55${telefone}&text=${mensagem}`;
+
+    const podeAbrir = await Linking.canOpenURL(url);
+    if (podeAbrir) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(
+        '🚨 SOS ATIVADO',
+        `Seus contatos foram alertados!\n\n${locationText}`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const ligar190 = () => {
+    Alert.alert('Ligar 190', 'Deseja ligar para a Polícia Militar agora?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Ligar', style: 'destructive', onPress: () => Linking.openURL('tel:190') },
+    ]);
+  };
+
+  const ligar180 = () => {
+    Alert.alert('Ligar 180', 'Deseja ligar para a Central de Atendimento à Mulher?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Ligar', style: 'destructive', onPress: () => Linking.openURL('tel:180') },
+    ]);
+  };
+
+  const enviarSMS = async () => {
+    if (contatos.length === 0) {
+      Alert.alert('Sem contatos', 'Cadastre contatos de emergência na aba Contatos primeiro.');
+      return;
+    }
+
+    const mapsLink = localizacao
+      ? `https://maps.google.com/?q=${localizacao.latitude},${localizacao.longitude}`
+      : null;
+
+    const locationText = mapsLink
+      ? ` Minha localização: ${localizacao?.endereco ?? ''} ${mapsLink}`
+      : '';
+
+    const mensagem = encodeURIComponent(
+      `🚨 EMERGÊNCIA - Safe Her\nPreciso de ajuda agora!${locationText}`
+    );
+
+    const contato = contatos[0];
+    const telefone = contato.phone.replace(/\D/g, '');
+    const url = `sms:${telefone}?body=${mensagem}`;
+
+    const podeAbrir = await Linking.canOpenURL(url);
+    if (podeAbrir) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert('Erro', 'Não foi possível abrir o aplicativo de SMS.');
+    }
+  };
+
+  const alarme = () => {
+    Vibration.vibrate([0, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]);
+    Alert.alert('🔊 Alarme Ativado', 'Vibração de emergência disparada!', [
+      { text: 'Parar', onPress: () => Vibration.cancel() },
+    ]);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        {/* Título da tela */}
         <Text style={styles.title}>Emergência SOS</Text>
-        {/* Subtítulo explicativo */}
         <Text style={styles.subtitle}>Ative o alerta em situações de perigo</Text>
       </View>
 
-      {/* STATUS - Exibe a barra de alerta se o alerta estiver ativado */}
+      {/* BARRA DE ALERTA */}
       {alertaAtivado && (
         <View style={styles.alertBar}>
           <Text style={styles.alertText}>🚨 ALERTA ATIVADO!</Text>
+          {localizacao?.endereco && (
+            <Text style={styles.alertLocation}>📍 {localizacao.endereco}</Text>
+          )}
+          {localizacao && (
+            <Text style={styles.alertLocation}>
+              🗺️ maps.google.com/?q={localizacao.latitude.toFixed(4)},{localizacao.longitude.toFixed(4)}
+            </Text>
+          )}
         </View>
       )}
 
-      {/* BOTÃO CENTRAL - Botão principal para ativar/desativar o alerta */}
+      {/* BOTÃO SOS */}
       <View style={styles.center}>
-        <Text style={styles.helpTitle}>Pressione para pedir ajuda</Text>
-        <Text style={styles.helpSubtitle}>Seus contatos serão notificados</Text>
+        <Text style={styles.helpTitle}>
+          {alertaAtivado ? 'Você está sendo monitorada' : 'Pressione para pedir ajuda'}
+        </Text>
+        <Text style={styles.helpSubtitle}>
+          {contatos.length > 0
+            ? `${contatos.length} contato(s) de emergência cadastrado(s)`
+            : 'Nenhum contato cadastrado ainda'}
+        </Text>
 
         <TouchableOpacity
-          style={[ // Estilo do botão SOS
-            styles.sosButton,
-            alertaAtivado ? styles.sosActive : styles.sosInactive, // Altera o estilo dependendo do estado
-          ]}
-          onPress={toggleAlerta} // Chama a função para alternar o alerta
+          style={[styles.sosButton, alertaAtivado ? styles.sosActive : styles.sosInactive]}
+          onPress={toggleAlerta}
+          activeOpacity={0.85}
         >
-          <Text style={styles.sosIcon}>🚨</Text> {/* Ícone de emergência */}
-          <Text style={styles.sosText}>{alertaAtivado ? "CANCELAR" : "SOS"} {/* Texto do botão: SOS ou CANCELAR */}</Text>
-          <Text style={styles.sosSubText}>{alertaAtivado ? "Toque para cancelar" : "Toque para ativar"} {/* Texto explicativo */}</Text>
+          <Text style={styles.sosIcon}>🚨</Text>
+          <Text style={styles.sosText}>{alertaAtivado ? 'CANCELAR' : 'SOS'}</Text>
+          <Text style={styles.sosSubText}>
+            {alertaAtivado ? 'Toque para cancelar' : 'Toque para ativar'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* AÇÕES RÁPIDAS - Lista de ações rápidas para emergência */}
+      {/* AÇÕES RÁPIDAS */}
       <View style={styles.actions}>
         <Text style={styles.sectionTitle}>Ações Rápidas</Text>
 
-        {/* Botão para ligar para a polícia */}
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={ligar190}>
           <Text style={styles.actionTitle}>📞 Ligar 190</Text>
           <Text style={styles.actionDesc}>Polícia Militar</Text>
         </TouchableOpacity>
 
-        {/* Botão para ligar para o atendimento à mulher */}
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={ligar180}>
           <Text style={styles.actionTitle}>📞 Ligar 180</Text>
           <Text style={styles.actionDesc}>Central de Atendimento à Mulher</Text>
         </TouchableOpacity>
 
-        {/* Botão para enviar SMS para contatos cadastrados */}
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={enviarSMS}>
           <Text style={styles.actionTitle}>💬 Enviar SMS</Text>
-          <Text style={styles.actionDesc}>Para contatos cadastrados</Text>
+          <Text style={styles.actionDesc}>
+            {contatos.length > 0
+              ? `Para ${contatos[0].name}${contatos.length > 1 ? ` e mais ${contatos.length - 1}` : ''} com localização`
+              : 'Nenhum contato cadastrado'}
+          </Text>
         </TouchableOpacity>
 
-        {/* Botão para ativar alarme sonoro */}
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={alarme}>
           <Text style={styles.actionTitle}>🔊 Alarme Sonoro</Text>
-          <Text style={styles.actionDesc}>Som alto de emergência</Text>
+          <Text style={styles.actionDesc}>Vibração de emergência</Text>
         </TouchableOpacity>
       </View>
 
-      {/* INFO - Exibe informações importantes sobre o alerta */}
+      {/* INFO */}
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>⚠️ Informações Importantes</Text>
         <Text style={styles.infoText}>
-          • Envia localização em tempo real{"\n"}
-          • Contatos recebem notificação{"\n"}
+          • SOS envia localização via WhatsApp para contatos{'\n'}
+          • SMS enviado com link do Google Maps{'\n'}
           • Em perigo real, ligue 190 imediatamente
         </Text>
       </View>
@@ -113,140 +241,29 @@ export default function TelaEmergencia({ navigation }: Props) {
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFF0F5',
-  },
-
-  container: {
-    padding: spacing.lg, // Espaçamento geral da tela
-  },
-
-  header: {
-    backgroundColor: '#EF4444', // Cor de fundo do cabeçalho
-    padding: spacing.lg, // Espaçamento interno do cabeçalho
-    borderRadius: borderRadius.lg, // Borda arredondada
-  },
-
-  title: {
-    fontSize: fontSize['2xl'], // Tamanho grande para o título
-    fontWeight: 'bold', // Texto em negrito
-    color: 'white', // Cor do texto
-  },
-
-  subtitle: {
-    color: '#FECACA', // Cor do subtítulo
-    marginTop: 4, // Margem superior para o subtítulo
-  },
-
-  alertBar: {
-    backgroundColor: '#DC2626', // Cor de fundo da barra de alerta
-    padding: spacing.md, // Espaçamento interno
-    marginTop: spacing.md, // Margem superior
-    borderRadius: borderRadius.lg, // Borda arredondada
-  },
-
-  alertText: {
-    color: 'white', // Cor do texto do alerta
-    fontWeight: 'bold', // Texto em negrito
-    textAlign: 'center', // Alinha o texto ao centro
-  },
-
-  center: {
-    alignItems: 'center', // Centraliza os itens
-    marginTop: spacing.xl, // Margem superior
-  },
-
-  helpTitle: {
-    fontSize: fontSize.lg, // Tamanho grande para o título
-    fontWeight: 'bold', // Texto em negrito
-    color: '#111827', // Cor do título
-  },
-
-  helpSubtitle: {
-    color: '#6B7280', // Cor do subtítulo
-    marginBottom: spacing.lg, // Margem inferior
-  },
-
-  sosButton: {
-    width: 220, // Largura do botão
-    height: 220, // Altura do botão
-    borderRadius: 110, // Borda arredondada (botão circular)
-    justifyContent: 'center', // Alinha o conteúdo ao centro
-    alignItems: 'center', // Alinha o conteúdo ao centro
-  },
-
-  sosInactive: {
-    backgroundColor: '#EF4444', // Cor do botão quando o alerta não está ativado
-  },
-
-  sosActive: {
-    backgroundColor: '#B91C1C', // Cor do botão quando o alerta está ativado
-  },
-
-  sosIcon: {
-    fontSize: 40, // Tamanho do ícone
-    marginBottom: 8, // Margem inferior para o ícone
-  },
-
-  sosText: {
-    fontSize: 24, // Tamanho do texto
-    fontWeight: 'bold', // Texto em negrito
-    color: 'white', // Cor do texto
-  },
-
-  sosSubText: {
-    fontSize: 12, // Tamanho do subtítulo
-    color: 'rgba(255,255,255,0.8)', // Cor do subtítulo (semi-transparente)
-  },
-
-  actions: {
-    marginTop: spacing.xl, // Margem superior para as ações
-  },
-
-  sectionTitle: {
-    fontWeight: 'bold', // Texto em negrito
-    marginBottom: spacing.md, // Margem inferior
-    color: '#111827', // Cor do título
-  },
-
-  actionCard: {
-    backgroundColor: 'white', // Cor de fundo do cartão de ação
-    padding: spacing.md, // Espaçamento interno
-    borderRadius: borderRadius.lg, // Borda arredondada
-    marginBottom: spacing.sm, // Margem inferior
-  },
-
-  actionTitle: {
-    fontWeight: 'bold', // Texto em negrito
-    color: '#111827', // Cor do título
-  },
-
-  actionDesc: {
-    fontSize: 12, // Tamanho do texto descritivo
-    color: '#6B7280', // Cor do texto descritivo
-  },
-
-  infoBox: {
-    backgroundColor: '#FEFCE8', // Cor de fundo da caixa de informações
-    borderWidth: 1, // Largura da borda
-    borderColor: '#FDE68A', // Cor da borda
-    padding: spacing.md, // Espaçamento interno
-    borderRadius: borderRadius.lg, // Borda arredondada
-    marginTop: spacing.lg, // Margem superior
-  },
-
-  infoTitle: {
-    fontWeight: 'bold', // Texto em negrito
-    color: '#92400E', // Cor do título
-    marginBottom: 6, // Margem inferior
-  },
-
-  infoText: {
-    fontSize: 12, // Tamanho do texto
-    color: '#A16207', // Cor do texto
-  },
+  container: { padding: spacing.lg, backgroundColor: '#FFF0F5' },
+  header: { backgroundColor: '#EF4444', padding: spacing.lg, borderRadius: borderRadius.lg },
+  title: { fontSize: fontSize['2xl'], fontWeight: 'bold', color: 'white' },
+  subtitle: { color: '#FECACA', marginTop: 4 },
+  alertBar: { backgroundColor: '#DC2626', padding: spacing.md, marginTop: spacing.md, borderRadius: borderRadius.lg },
+  alertText: { color: 'white', fontWeight: 'bold', textAlign: 'center', fontSize: fontSize.base },
+  alertLocation: { color: '#FECACA', textAlign: 'center', fontSize: fontSize.sm, marginTop: 4 },
+  center: { alignItems: 'center', marginTop: spacing.xl },
+  helpTitle: { fontSize: fontSize.lg, fontWeight: 'bold', color: '#111827', textAlign: 'center' },
+  helpSubtitle: { color: '#6B7280', marginBottom: spacing.lg, textAlign: 'center', fontSize: fontSize.sm },
+  sosButton: { width: 220, height: 220, borderRadius: 110, justifyContent: 'center', alignItems: 'center', shadowColor: colors.black, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 12, borderWidth: 6, borderColor: colors.white },
+  sosInactive: { backgroundColor: '#EF4444' },
+  sosActive: { backgroundColor: '#B91C1C' },
+  sosIcon: { fontSize: 40, marginBottom: 8 },
+  sosText: { fontSize: 24, fontWeight: 'bold', color: 'white' },
+  sosSubText: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  actions: { marginTop: spacing.xl },
+  sectionTitle: { fontWeight: 'bold', marginBottom: spacing.md, color: '#111827', fontSize: fontSize.base },
+  actionCard: { backgroundColor: 'white', padding: spacing.md, borderRadius: borderRadius.lg, marginBottom: spacing.sm, shadowColor: colors.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  actionTitle: { fontWeight: 'bold', color: '#111827' },
+  actionDesc: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  infoBox: { backgroundColor: '#FEFCE8', borderWidth: 1, borderColor: '#FDE68A', padding: spacing.md, borderRadius: borderRadius.lg, marginTop: spacing.lg, marginBottom: spacing.xl },
+  infoTitle: { fontWeight: 'bold', color: '#92400E', marginBottom: 6 },
+  infoText: { fontSize: 12, color: '#A16207', lineHeight: 20 },
 });

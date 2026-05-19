@@ -24,8 +24,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function AppNavigator() { 
   return ( 
     <NavigationContainer> 
-      <Stack.Navigator initialRouteName="Inicio"> 
-        <Stack.Screen name="Inicio" component={TelaInicial} /> 
+      <Stack.Navigator id="root" initialRouteName="Inicio">
+       <Stack.Screen name="Inicio" component={TelaInicial} /> 
         <Stack.Screen name="TelaEmergencia" component={TelaEmergencia} /> 
         <Stack.Screen name="TelaContatos" component={TelaContatos} /> 
         <Stack.Screen name="TelaMapa" component={TelaMapa} /> 
