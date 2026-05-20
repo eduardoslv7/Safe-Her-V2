@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188703035630",
+    "project_id": "safe-her-ac68f",
+    "storage_bucket": "safe-her-ac68f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188703035630:android:19e32471febbd0bb8da3ff",
+        "android_client_info": {
+          "package_name": "com.safeher.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBn3FFnnRgnTlRxNlyxoIAFnJC5_0dpoRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
