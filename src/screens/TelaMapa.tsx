@@ -1,10 +1,10 @@
-import { 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TextInput, 
-  View, 
-  TouchableOpacity 
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  TouchableOpacity,
 } from "react-native";
 
 import { useRef } from "react";
@@ -12,16 +12,16 @@ import { useRef } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 
-import MapView, { Marker } from "react-native-maps";
-
 import { borderRadius, fontSize, spacing } from "../styles/colors";
+
+// IMPORTA DO wrapper
+import { MapView, Marker } from "../components/Mapa";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TelaMapa">;
 
 export default function TelaMapa({ navigation }: Props) {
 
-  // 🎮 CONTROLE DO MAPA
-  const mapRef = useRef(null);
+  const mapRef = useRef<any>(null);
 
   const locaisProximos = [
     {
@@ -40,30 +40,33 @@ export default function TelaMapa({ navigation }: Props) {
     },
   ];
 
-  //  FUNÇÃO QUE MOVE O MAPA
   const irParaLocal = (item: any) => {
-    mapRef.current?.animateToRegion(
+
+    if (!mapRef.current || typeof mapRef.current.animateToRegion !== "function") {
+      return;
+    }
+
+    mapRef.current.animateToRegion(
       {
         latitude: item.latitude,
         longitude: item.longitude,
         latitudeDelta: 0.005,
         longitudeDelta: 0.005,
       },
-      1000 // duração da animação
+      1000
     );
   };
 
   return (
     <ScrollView style={styles.container}>
-      
+
       {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.logo}>🛡️</Text>
 
         <Text style={styles.title}>Mapa de Segurança</Text>
-        <Text style={styles.subtitle}>
-          Locais seguros perto de você
-        </Text>
+
+        <Text style={styles.subtitle}>Locais seguros perto de você</Text>
 
         <TextInput
           placeholder="Buscar local..."
@@ -75,7 +78,7 @@ export default function TelaMapa({ navigation }: Props) {
       {/* MAPA */}
       <View style={styles.mapArea}>
         <MapView
-          ref={mapRef} // 🔥 conexão do controle
+          ref={mapRef}
           style={{ width: "100%", height: "100%" }}
           initialRegion={{
             latitude: -22.865,
@@ -97,7 +100,9 @@ export default function TelaMapa({ navigation }: Props) {
                   ? "Local Seguro"
                   : "Área de Risco"
               }
-              pinColor={item.tipo === "seguro" ? "green" : "red"}
+              pinColor={
+                item.tipo === "seguro" ? "green" : "red"
+              }
             />
           ))}
         </MapView>
@@ -105,12 +110,14 @@ export default function TelaMapa({ navigation }: Props) {
 
       {/* LISTA */}
       <View style={styles.list}>
-        <Text style={styles.listTitle}>Locais Próximos</Text>
+        <Text style={styles.listTitle}>
+          Locais Próximos
+        </Text>
 
         {locaisProximos.map((item, index) => (
           <TouchableOpacity
             key={index}
-            onPress={() => irParaLocal(item)} // 🔥 clique move o mapa
+            onPress={() => irParaLocal(item)}
             style={[
               styles.card,
               item.tipo === "seguro"
@@ -118,22 +125,36 @@ export default function TelaMapa({ navigation }: Props) {
                 : styles.dangerCard,
             ]}
           >
-            <Text style={styles.cardTitle}>{item.nome}</Text>
+            <Text style={styles.cardTitle}>
+              {item.nome}
+            </Text>
+
             <Text style={styles.cardSub}>
               {item.tipo === "seguro"
                 ? "Local Seguro"
                 : "Área de Risco"}
             </Text>
-            <Text style={styles.distance}>{item.distancia}</Text>
+
+            <Text style={styles.distance}>
+              {item.distancia}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* LEGENDA */}
       <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Legenda</Text>
-        <Text style={styles.legendText}>🛡️ Locais Seguros</Text>
-        <Text style={styles.legendText}>⚠️ Áreas de Risco</Text>
+        <Text style={styles.legendTitle}>
+          Legenda
+        </Text>
+
+        <Text style={styles.legendText}>
+          🛡️ Locais Seguros
+        </Text>
+
+        <Text style={styles.legendText}>
+          ⚠️ Áreas de Risco
+        </Text>
       </View>
 
     </ScrollView>
