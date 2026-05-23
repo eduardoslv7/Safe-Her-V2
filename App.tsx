@@ -1,6 +1,7 @@
-import { AppNavigator } from './src/navigation/AppNavigator'; // Importa o componente AppNavigator, que gerencia a navegação do app
+import { AppNavigator } from './src/navigation/AppNavigator';
+// Importa o service para registrar a background task antes do app renderizar
+import './src/services/trajeto.service';
 
-// Componente principal do aplicativo
 export default function App() {
-  return <AppNavigator />; // Renderiza o AppNavigator, responsável pela navegação entre as telas
+  return <AppNavigator />;
 }

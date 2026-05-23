@@ -5,8 +5,7 @@ export interface Contact {
   id: string;
   name: string;
   phone: string;
-  relationship?: string; // ex: "Mãe", "Amiga", "Irmã"
- fcmToken?: string; 
+  relationship?: string; // ex: "Mãe", "Amiga", "Irmã" ;
 }
 
 const STORAGE_KEY = '@safeher:contacts';
