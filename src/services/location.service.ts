@@ -8,7 +8,7 @@ export interface Coordinates {
 
 class LocationService {
   private watcherId: Location.LocationSubscription | null = null; // Variável para armazenar o id do rastreador
-
+ 
   // Solicita permissões de localização em foreground (quando o app está em uso)
   async requestPermissions(): Promise<boolean> {
     try {

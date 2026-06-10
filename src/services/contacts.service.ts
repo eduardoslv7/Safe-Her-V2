@@ -9,7 +9,7 @@ export interface Contact {
 }
 
 const STORAGE_KEY = '@safeher:contacts';
-
+ 
 class ContactsService {
   // Retorna todos os contatos salvos
   async getAll(): Promise<Contact[]> {

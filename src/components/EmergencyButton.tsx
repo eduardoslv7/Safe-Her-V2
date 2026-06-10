@@ -10,7 +10,7 @@ import {
   Vibration, // texto na tela
   View, // container (tipo uma div)
 } from 'react-native';
-
+ 
 // Importa cores e tamanhos do seu sistema de estilos
 import { colors, fontSize, spacing } from '../styles/colors';
 

@@ -15,7 +15,7 @@ import { borderRadius, colors, fontSize, spacing } from '../styles/colors';
 
 // Importações dos teus serviços de dados (iguais aos das outras telas)
 import contactsService, { Contact } from '../services/contacts.service';
-
+ 
 type Props = NativeStackScreenProps<RootStackParamList, 'TelaPrimeiroDate'>;
 
 interface DateForm {

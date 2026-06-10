@@ -18,6 +18,7 @@ export const commonStyles = StyleSheet.create({
     flexGrow: 1, // Permite que o container role e ocupe o tamanho necessário
   },
   
+  
   // Cards
   card: {
     backgroundColor: colors.white, // Cor de fundo do card

@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { borderRadius, colors, fontSize, spacing } from '../styles/colors';
 import contactsService, { Contact } from '../services/contacts.service';
-
+ 
 type Props = NativeStackScreenProps<RootStackParamList, 'TelaContatos'>;
 
 interface ContactForm {

@@ -11,7 +11,7 @@ import TelaMapa from '../screens/TelaMapa';
 import TelaPerfil from '../screens/TelaPerfil';
 import TelaTrajeto from '../screens/TelaTrajeto';
 import TelaPrimeiroDate from '../screens/TelaPrimeiroDate';
-
+ 
 export type RootStackParamList = {
   TelaIntroducao: undefined;
   TelaLogin: undefined;

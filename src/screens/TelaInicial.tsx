@@ -6,7 +6,7 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 
 // Importa as variáveis globais de estilo do projeto
 import { borderRadius, fontSize, spacing } from "../styles/colors";
-
+ 
 // Tipagem para as propriedades do componente (passa o tipo de navegação da tela 'Inicio')
 type Props = NativeStackScreenProps<RootStackParamList, 'Inicio'>;
 

@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 
 import { borderRadius, fontSize, spacing } from "../styles/colors";
-
+ 
 // IMPORTA DO wrapper.
 import { MapView, Marker } from "../components/Mapa";
 

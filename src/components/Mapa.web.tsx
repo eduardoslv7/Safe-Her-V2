@@ -23,7 +23,7 @@ export function MapView({ style }: MapProps) {
     </View>
   );
 }
-
+ 
 export function Marker() {
   return null;
 }

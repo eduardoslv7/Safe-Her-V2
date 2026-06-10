@@ -9,7 +9,7 @@ interface Contact { id: string; name: string; phone: string; relationship: strin
 
 // Define as props que o componente espera receber
 interface ContactCardProps { contact: Contact; onDelete: (id: string) => void; }
-
+ 
 // Componente funcional React que recebe um contato e uma função para deletar
 export const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => {
 

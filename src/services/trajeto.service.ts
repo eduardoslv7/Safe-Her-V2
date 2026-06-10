@@ -8,7 +8,7 @@ import contactsService from './contacts.service';
 
 export const TASK_NAME = 'safeher-trajeto-background';
 const STORAGE_KEY = '@safeher:trajeto_ativo';
-
+ 
 export interface TrajetoState {
   ativo: boolean;
   origem: string;

@@ -14,7 +14,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { borderRadius, colors, fontSize, spacing } from '../styles/colors';
 import contactsService, { Contact } from '../services/contacts.service';
 import locationService from '../services/location.service';
-
+ 
 type Props = NativeStackScreenProps<RootStackParamList, 'TelaEmergencia'>;
 
 export default function TelaEmergencia({ navigation }: Props) {

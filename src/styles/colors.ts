@@ -11,7 +11,7 @@ export const colors = {
     700: '#be185d',
     800: '#9d174d',
   },
-  // Roxo
+  // Roxo 
   purple: {
     50: '#faf5ff',
     100: '#f3e8ff',

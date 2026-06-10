@@ -13,7 +13,7 @@ export default function TelaPerfil({ navigation }: Props) {
       
       {/* HEADER - Cabeçalho com o avatar e informações do perfil */}
       <View style={styles.header}>
-
+ 
         {/* Linha com o avatar e as informações do usuário */}
         <View style={styles.profileRow}>
           <View style={styles.avatar}>

@@ -21,7 +21,7 @@ import {
   registrarBackgroundTask,
   salvarTrajetoState,
 } from '../services/trajeto.service';
-
+ 
 type Props = NativeStackScreenProps<RootStackParamList, 'TelaTrajeto'>;
 
 const INTERVALO_SMS = 30 * 60 * 1000;
