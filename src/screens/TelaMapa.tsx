@@ -14,7 +14,7 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 
 import { borderRadius, fontSize, spacing } from "../styles/colors";
 
-// IMPORTA DO wrapper
+// IMPORTA DO wrapper.
 import { MapView, Marker } from "../components/Mapa";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TelaMapa">;
