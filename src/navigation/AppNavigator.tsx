@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // TELAS
 import TelaIntroducao from '../screens/TelaIntroducao';
 import TelaLogin from '../screens/TelaLogin';
+import TelaRegistro from '../screens/TelaRegistro'; //
 import TelaInicial from '../screens/TelaInicial';
 import TelaEmergencia from '../screens/TelaEmergencia';
 import TelaContatos from '../screens/TelaContatos';
@@ -15,6 +16,7 @@ import TelaPrimeiroDate from '../screens/TelaPrimeiroDate';
 export type RootStackParamList = {
   TelaIntroducao: undefined;
   TelaLogin: undefined;
+  TelaRegistro: undefined;
   Inicio: undefined;
   TelaEmergencia: undefined;
   TelaContatos: undefined;
@@ -29,9 +31,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="TelaIntroducao"
-      >
+      <Stack.Navigator initialRouteName="TelaIntroducao">
         <Stack.Screen
           name="TelaIntroducao"
           component={TelaIntroducao}
@@ -42,6 +42,13 @@ export function AppNavigator() {
           name="TelaLogin"
           component={TelaLogin}
           options={{ headerShown: false }}
+        />
+
+        {/* 3. NOVA SCREEN ADICIONADA NAS ROTAS */}
+        <Stack.Screen
+          name="TelaRegistro"
+          component={TelaRegistro}
+          options={{ headerShown: false }} 
         />
 
         <Stack.Screen
